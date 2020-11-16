@@ -98,7 +98,7 @@ def deploy_model(ginfile: str, username: str, branch: str, gpu:int) -> None:
                       job_file= _job_file)
     run_job(rem_host=_rem_host, rem_workspace=_rem_workspace,
             job_file=_job_file)
-    print(f'Output will be saved in {rem_host}:~/{_rem_workspace}/{_out_file}')
+    print(f'Output will be saved in {_rem_host}:~/{_rem_workspace}/{_out_file}')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
