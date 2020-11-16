@@ -5,3 +5,4 @@ e.g.:
 ```bash
 python3 toolkit/run_exp.py --gin model.gin --user username --branch dev
 ```
+GPU count option: `--gpu=...`
