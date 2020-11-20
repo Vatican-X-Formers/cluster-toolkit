@@ -22,7 +22,8 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
 def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, ginfile: str,
                       job: str, gpu: int, out_file: str,
-                      job_file: str, custom_script: str):
+                      job_file: str, custom_script: str,
+                      output_dir: str):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -46,6 +47,13 @@ cat {ginfile} >> {meta_file}
 
 {job}
 
+mv {meta_file} {output_dir}
+mv {out_file} {output_dir}
+mv {job_file} {output_dir}
+mv {ginfile} {output_dir}
+mv {custom_script} {output_dir}
+
+
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
         username=username,
@@ -53,7 +61,10 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         meta_file=out_file+'.meta',
         gpu=gpu,
         job=job,
-        ginfile=ginfile
+        ginfile=ginfile,
+        job_file=job_file,
+        custom_script=custom_script,
+        output_dir=output_dir
     )
 
     print('[DEBUG] Job configuration')
@@ -70,18 +81,20 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
     print('[INFO] Workspace prepared') 
 
-def create_job(ginfile: str, branch: str, custom_script: str) -> str:
+def create_job(ginfile: str, branch: str, custom_script: str,
+               output_dir: str) -> str:
     
     job = '''
 pip3 install matplotlib
 pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 pip3 install -q gin
 python3 {custom_script}
-python3 -m trax.trainer --config_file={ginfile}
+python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
     '''.format(
         branch=branch,
         ginfile=ginfile,
-        custom_script=custom_script if custom_script else '--version'
+        custom_script=custom_script if custom_script else '--version',
+        output_dir=output_dir
     )
 
     print('[INFO] Job generated')
@@ -96,20 +109,23 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 
 def deploy_model(ginfile: str, username: str,
                  branch: str, gpu:int, custom_script: Union[str, None]) -> None:
-
+    _date = time.strftime("%Y%m%d_%H%M%S")
+    _out_file = _date+'.out'
+    _out_dir = _date
     _rem_host = f'{username}@entropy.mimuw.edu.pl'
     _rem_workspace = 'vatican_trax_workspace'
-    _out_file = time.strftime("%Y%m%d_%H%M%S.out")
     _job_file = 'jobtask.txt'
 
-    job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script)
+    job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
+                     output_dir=_out_dir)
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, 
                       username=username, ginfile=ginfile,
                       job=job, gpu=gpu, out_file=_out_file,
-                      job_file= _job_file, custom_script=custom_script)
+                      job_file= _job_file, custom_script=custom_script,
+                      output_dir=_out_dir)
     run_job(rem_host=_rem_host, rem_workspace=_rem_workspace,
             job_file=_job_file)
-    print(f'Output will be saved in {_rem_host}:~/{_rem_workspace}/{_out_file}')
+    print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
