@@ -1,5 +1,5 @@
 import argparse
-import typing
+from typing import Union
 import subprocess
 import time
 
@@ -22,7 +22,7 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
 def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, ginfile: str,
                       job: str, gpu: int, out_file: str,
-                      job_file: str):
+                      job_file: str, custom_script: str):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -41,8 +41,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --output={out_file}
 
 nvidia-smi -L
-echo $(nvidia-smi -L) > {meta_file}
-echo $(cat {ginfile}) > {meta_file}
+echo $(nvidia-smi -L) >> {meta_file}
+cat {ginfile} >> {meta_file}
 
 {job}
 
@@ -63,19 +63,25 @@ echo "Welcome to Vice City. Welcome to the 1980s."
     
     # copy ginfile to remote
     send_to_server(job_file, rem_host, rem_workspace)
-    
+
+    # copy custom script to remote
+    if custom_script:
+        send_to_server(custom_script, rem_host, rem_workspace)
+
     print('[INFO] Workspace prepared') 
 
-def create_job(ginfile: str, branch: str) -> str:
+def create_job(ginfile: str, branch: str, custom_script: str) -> str:
     
     job = '''
 pip3 install matplotlib
 pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 pip3 install -q gin
+python3 {custom_script}
 python3 -m trax.trainer --config_file={ginfile}
     '''.format(
         branch=branch,
-        ginfile=ginfile
+        ginfile=ginfile,
+        custom_script=custom_script if custom_script else '--version'
     )
 
     print('[INFO] Job generated')
@@ -88,18 +94,19 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
                           cmds=cmds)
     print('Job submitted')
 
-def deploy_model(ginfile: str, username: str, branch: str, gpu:int) -> None:
+def deploy_model(ginfile: str, username: str,
+                 branch: str, gpu:int, custom_script: Union[str, None]) -> None:
 
     _rem_host = f'{username}@entropy.mimuw.edu.pl'
     _rem_workspace = 'vatican_trax_workspace'
     _out_file = time.strftime("%Y%m%d_%H%M%S.out")
     _job_file = 'jobtask.txt'
 
-    job = create_job(ginfile=ginfile, branch=branch)
+    job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script)
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, 
                       username=username, ginfile=ginfile,
                       job=job, gpu=gpu, out_file=_out_file,
-                      job_file= _job_file)
+                      job_file= _job_file, custom_script=custom_script)
     run_job(rem_host=_rem_host, rem_workspace=_rem_workspace,
             job_file=_job_file)
     print(f'Output will be saved in {_rem_host}:~/{_rem_workspace}/{_out_file}')
@@ -114,7 +121,9 @@ if __name__ == "__main__":
         '--branch', help='branch name', required=True, type=str)
     parser.add_argument(
         '--gpu-count', help='number of gpu', required=False, default=1, type=int)
+    parser.add_argument(
+        '--script', help='custom script', required=False, type=str)   
     args = parser.parse_args()
     deploy_model(ginfile=args.gin, username=args.user, branch=args.branch,
-                 gpu=args.gpu_count)
+                 gpu=args.gpu_count, custom_script=args.script)
     
