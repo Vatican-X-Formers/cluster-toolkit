@@ -41,6 +41,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --output={out_file}
 
 nvidia-smi -L
+echo $(nvidia-smi -L) > {meta_file}
+echo $(cat {ginfile}) > {meta_file}
 
 {job}
 
@@ -48,8 +50,10 @@ echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
         username=username,
         out_file=out_file,
+        meta_file=out_file+'.meta',
         gpu=gpu,
-        job=job
+        job=job,
+        ginfile=ginfile
     )
 
     print('[DEBUG] Job configuration')
