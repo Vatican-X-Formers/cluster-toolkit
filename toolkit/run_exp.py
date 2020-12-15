@@ -29,6 +29,11 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
     ]).returncode)
 
+    # make output dir
+    exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
+        f'mkdir -p {output_dir}'
+    ])
+
     # copy ginfile to remote
     send_to_server(ginfile, rem_host, rem_workspace)
 
@@ -53,6 +58,7 @@ mv {job_file} {output_dir}
 mv {ginfile} {output_dir}
 mv {custom_script} {output_dir}
 
+rm -rf trax venv
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
@@ -85,11 +91,17 @@ def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
     
     job = '''
-pip3 install matplotlib
-pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-pip3 install -q gin
-python3 {custom_script}
-python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
+python3 -m venv venv
+source venv/bin/activate
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install numpy==1.18.5
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q matplotlib
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install tensor2tensor
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q gin
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
     '''.format(
         branch=branch,
         ginfile=ginfile,
