@@ -55,12 +55,6 @@ cat {ginfile} >> {meta_file}
 
 {job}
 
-mv {meta_file} {output_dir}
-mv {out_file} {output_dir}
-mv {job_file} {output_dir}
-mv {ginfile} {output_dir}
-mv {custom_script} {output_dir}
-
 rm -rf trax venv
 
 echo "Welcome to Vice City. Welcome to the 1980s."
