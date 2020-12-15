@@ -2,6 +2,7 @@ import argparse
 from typing import Union
 import subprocess
 import time
+import os
 
 def exit_if_error(code):
     if code != 0:
@@ -35,7 +36,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
     ])
 
     # copy ginfile to remote
-    send_to_server(ginfile, rem_host, rem_workspace)
+    send_to_server(ginfile, rem_host, os.path.join(rem_workspace, output_dir))
 
     # prepare job
     job_str = R'''#!/bin/bash
@@ -47,6 +48,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --output={out_file}
 
 nvidia-smi -L
+cd {output_dir}
+pwd
 echo $(nvidia-smi -L) >> {meta_file}
 cat {ginfile} >> {meta_file}
 
@@ -79,11 +82,11 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         output.write(job_str)
     
     # copy ginfile to remote
-    send_to_server(job_file, rem_host, rem_workspace)
+    send_to_server(job_file, rem_host, os.path.join(rem_workspace, output_dir))
 
     # copy custom script to remote
     if custom_script:
-        send_to_server(custom_script, rem_host, rem_workspace)
+        send_to_server(custom_script, rem_host, os.path.join(rem_workspace, output_dir))
 
     print('[INFO] Workspace prepared') 
 
@@ -101,7 +104,7 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install tensor2tensor
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q gin
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
         branch=branch,
         ginfile=ginfile,
@@ -135,7 +138,7 @@ def deploy_model(ginfile: str, username: str,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
                       output_dir=_out_dir)
-    run_job(rem_host=_rem_host, rem_workspace=_rem_workspace,
+    run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
