@@ -29,6 +29,11 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
     ]).returncode)
 
+    # make output dir
+    exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
+        f'mkdir -p {output_dir}'
+    ])
+
     # copy ginfile to remote
     send_to_server(ginfile, rem_host, rem_workspace)
 
@@ -53,6 +58,7 @@ mv {job_file} {output_dir}
 mv {ginfile} {output_dir}
 mv {custom_script} {output_dir}
 
+rm -rf trax venv
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
@@ -85,8 +91,15 @@ def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
     
     job = '''
-pip3 install matplotlib
-pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+git clone -b {branch} https://github.com/Vatican-X-Formers/trax.git
+python3 -m venv venv
+source venv/bin/activate
+# export LD_LIBRARY_PATH=/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+pip3 install numpy==1.19.0
+pip3 install -q matplotlib
+pip3 install tensor2tensor
+pip3 install -e trax
 pip3 install -q gin
 python3 {custom_script}
 python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
