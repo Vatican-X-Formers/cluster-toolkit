@@ -96,11 +96,12 @@ python3 -m venv venv
 source venv/bin/activate
 # export LD_LIBRARY_PATH=/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH
 # export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-pip3 install numpy==1.19.0
+pip3 install numpy==1.18.5
 pip3 install -q matplotlib
 pip3 install tensor2tensor
 pip3 install -e trax
 pip3 install -q gin
+pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html
 python3 {custom_script}
 python3 -m trax.trainer --config_file={ginfile} --output_dir={output_dir}
     '''.format(
