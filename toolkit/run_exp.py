@@ -101,7 +101,6 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install numpy==1.18.5
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q matplotlib
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install tensor2tensor
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q gin
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
@@ -159,9 +158,9 @@ if __name__ == "__main__":
         '--script', help='custom script', required=False, type=str)   
     args = parser.parse_args()
 
-    gins = os.listdir(args.gin) if os.path.isdir(args.gin) else [args.gin]
+    gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
     
-    for gin in [os.path.join(args.gin, f) for f in gins]:
+    for gin in gins:
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
                      gpu=args.gpu_count, custom_script=args.script)
         
