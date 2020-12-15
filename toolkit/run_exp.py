@@ -155,6 +155,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--script', help='custom script', required=False, type=str)   
     args = parser.parse_args()
-    deploy_model(ginfile=args.gin, username=args.user, branch=args.branch,
-                 gpu=args.gpu_count, custom_script=args.script)
+
+    gins = os.listdir(args.gin) if os.path.isdir(args.gin) else [args.gin]
     
+    for gin in [os.path.join(args.gin, f) for f in gins]:
+        deploy_model(ginfile=gin, username=args.user, branch=args.branch,
+                     gpu=args.gpu_count, custom_script=args.script)
+        
