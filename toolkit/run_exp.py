@@ -98,16 +98,17 @@ def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
-            ('LD_LIBRARY_PATH','/usr/local/cuda/lib64:$LD_LIBRARY_PATH')]
+            ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH')]
 
     envs_bash = '\n'.join(
         f'export {k}={v}' for k,v in envs
     )
 
     job = '''
-python3 -m venv venv
-source venv/bin/activate
+source ../../venv/bin/activate
+
 {environment}
+
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
