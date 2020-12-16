@@ -97,7 +97,6 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
-            ('TF_XLA_FLAGS','--xla_gpu_cuda_data_dir'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
             ('LD_LIBRARY_PATH','/usr/local/cuda/lib64:$LD_LIBRARY_PATH')]
 
@@ -109,12 +108,12 @@ def create_job(ginfile: str, branch: str, custom_script: str,
 python3 -m venv venv
 source venv/bin/activate
 {environment}
-pip3 install -r req.txt
-pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-pip3 install gin
-python3 {custom_script}
-python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install -r req.txt
+XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
+XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install gin
+XLA_FLAGS=--xla_gpu_cuda_data_dir python3 {custom_script}
+XLA_FLAGS=--xla_gpu_cuda_data_dir python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
         branch=branch,
         ginfile=ginfile,
