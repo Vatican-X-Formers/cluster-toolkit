@@ -54,9 +54,10 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --output={out_file}
 
+# find / -type d -maxdepth 4 -name cuda 2>/dev/null
 rm -rf ~/.nv/
 nvidia-smi -L
-pwd
+
 echo $(nvidia-smi -L) >> {meta_file}
 cat {ginfile} >> {meta_file}
 
@@ -93,23 +94,24 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
 def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
-    
+    envs = 'TF_FORCE_GPU_ALLOW_GROWTH=true XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda'
     job = '''
 python3 -m venv venv
 source venv/bin/activate
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install numpy==1.18.5
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q matplotlib
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -q gin
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+{envs} pip3 install numpy==1.18.5
+{envs} pip3 install -q matplotlib
+{envs} pip3 install -q git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
+{envs} pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+{envs} pip3 install -q gin
+{envs} pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+{envs} python3 {custom_script}
+{envs} python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
         branch=branch,
         ginfile=ginfile,
         custom_script=custom_script if custom_script else '--version',
-        output_dir=output_dir
+        output_dir=output_dir,
+        envs=envs
     )
 
     print('[INFO] Job generated')
