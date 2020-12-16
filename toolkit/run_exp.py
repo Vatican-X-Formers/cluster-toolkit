@@ -109,7 +109,6 @@ source ../../venv/bin/activate
 
 {environment}
 
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install gin
