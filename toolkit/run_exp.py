@@ -93,24 +93,34 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
     print('[INFO] Workspace prepared') 
 
+
 def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
-    envs = 'TF_FORCE_GPU_ALLOW_GROWTH=true XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/usr/local/cuda/lib64"'
+    envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
+            ('TF_XLA_FLAGS','--xla_gpu_cuda_data_dir'),
+            ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
+            ('LD_LIBRARY_PATH','/usr/local/cuda/lib64:$LD_LIBRARY_PATH')]
+
+    envs_bash = '\n'.join(
+        f'export {k}={v}' for k,v in envs
+    )
+
     job = '''
 python3 -m venv venv
 source venv/bin/activate
-{envs} pip3 install -r req.txt
-{envs} pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-{envs} pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-{envs} pip3 install gin
-{envs} python3 {custom_script}
-{envs} python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+{environment}
+pip3 install -r req.txt
+pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
+pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+pip3 install gin
+python3 {custom_script}
+python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
         branch=branch,
         ginfile=ginfile,
         custom_script=custom_script if custom_script else '--version',
         output_dir=output_dir,
-        envs=envs
+        environment=envs_bash
     )
 
     print('[INFO] Job generated')
