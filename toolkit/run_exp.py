@@ -95,7 +95,7 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
 def create_job(ginfile: str, branch: str, custom_script: str,
                output_dir: str) -> str:
-    envs = 'TF_FORCE_GPU_ALLOW_GROWTH=true XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH'
+    envs = 'TF_FORCE_GPU_ALLOW_GROWTH=true XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/usr/local/cuda/lib64"'
     job = '''
 python3 -m venv venv
 source venv/bin/activate
@@ -103,7 +103,6 @@ source venv/bin/activate
 {envs} pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
 {envs} pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 {envs} pip3 install gin
-# {envs} pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
 {envs} python3 {custom_script}
 {envs} python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
