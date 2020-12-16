@@ -108,12 +108,12 @@ def create_job(ginfile: str, branch: str, custom_script: str,
 python3 -m venv venv
 source venv/bin/activate
 {environment}
-XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install -r req.txt
-XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-XLA_FLAGS=--xla_gpu_cuda_data_dir pip3 install gin
-XLA_FLAGS=--xla_gpu_cuda_data_dir python3 {custom_script}
-XLA_FLAGS=--xla_gpu_cuda_data_dir python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install gin
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
         branch=branch,
         ginfile=ginfile,
