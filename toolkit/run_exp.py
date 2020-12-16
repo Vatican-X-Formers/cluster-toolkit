@@ -99,7 +99,7 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     job = '''
 python3 -m venv venv
 source venv/bin/activate
-# {envs} pip3 install -r req.txt
+{envs} pip3 install -r req.txt
 {envs} pip3 uninstall tensor2tensor
 {envs} pip3 install --upgrade tensorflow-gpu==2.4.0
 {envs} pip3 install numpy==1.18.5
