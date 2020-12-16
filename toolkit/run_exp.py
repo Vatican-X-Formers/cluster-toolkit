@@ -44,6 +44,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 
     # copy ginfile to remote
     send_to_server(ginpath, rem_host, os.path.join(rem_workspace, output_dir))
+    send_to_server('req.txt', rem_host, os.path.join(rem_workspace, output_dir))
 
     # prepare job
     job_str = R'''#!/bin/bash
@@ -98,12 +99,15 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     job = '''
 python3 -m venv venv
 source venv/bin/activate
+# {envs} pip3 install -r req.txt
+{envs} pip3 uninstall tensor2tensor
+{envs} pip3 install --upgrade tensorflow-gpu==2.4.0
 {envs} pip3 install numpy==1.18.5
 {envs} pip3 install -q matplotlib
 {envs} pip3 install -q git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
 {envs} pip3 install -q git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 {envs} pip3 install -q gin
-{envs} pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+{envs} pip3 install --upgrade jax jaxlib==0.1.57+cuda101 -f https://storage.googleapis.com/jax-releases/jax_releases.html
 {envs} python3 {custom_script}
 {envs} python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
