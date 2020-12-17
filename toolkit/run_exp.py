@@ -81,8 +81,6 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         output_dir=output_dir
     )
 
-    # print('[DEBUG] Job configuration')
-    # print(job_str)
     with open(job_file, 'w') as output:
         output.write(job_str)
     
