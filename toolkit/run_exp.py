@@ -4,6 +4,8 @@ import subprocess
 import time
 import os
 import ntpath
+import time
+
 
 def exit_if_error(code):
     if code != 0:
@@ -79,8 +81,8 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         output_dir=output_dir
     )
 
-    print('[DEBUG] Job configuration')
-    print(job_str)
+    # print('[DEBUG] Job configuration')
+    # print(job_str)
     with open(job_file, 'w') as output:
         output.write(job_str)
     
@@ -109,9 +111,6 @@ source ../../venv/bin/activate
 
 {environment}
 
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install gin
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
     '''.format(
@@ -134,12 +133,12 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 
 def deploy_job(ginpath: str, username: str,
                  branch: str, gpu:int, custom_script: Union[str, None]) -> None:
+    
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'.out'
     _out_dir = _date
-    _rem_host = f'{username}@entropy.mimuw.edu.pl'
-    _rem_workspace = 'vatican_trax_workspace'
     _job_file = 'jobtask.txt'
+
     # overwrite ginpath with ginfile name
     ginfile = path_leaf(ginpath)
 
@@ -169,8 +168,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
-    
+
+    _rem_host = f'{args.user}@entropy.mimuw.edu.pl'
+    _rem_workspace = 'vatican_trax_workspace'
+ 
+
+    exec_on_rem_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, cmds=[
+        'pip3 uninstall -y tensor2tensor',
+        'pip3 uninstall -y trax',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
+        f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}'
+    ])
+
     for gin in gins:
+        time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
                      gpu=args.gpu_count, custom_script=args.script)
         
