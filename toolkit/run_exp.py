@@ -134,11 +134,11 @@ def deploy_job(ginpath: str, username: str,
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'.out'
-    _out_dir = _date
     _job_file = 'jobtask.txt'
 
     # overwrite ginpath with ginfile name
     ginfile = path_leaf(ginpath)
+    _out_dir = ginfile+_date
 
     job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
                      output_dir=_out_dir)
@@ -162,7 +162,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', required=False, default=1, type=int)
     parser.add_argument(
-        '--script', help='custom script', required=False, type=str)   
+        '--script', help='custom script', required=False, type=str)
+    parser.add_argument(
+        '--reinstall', action='store_true')
+
     args = parser.parse_args()
 
     gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
@@ -171,12 +174,13 @@ if __name__ == "__main__":
     _rem_workspace = 'vatican_trax_workspace'
  
 
-    exec_on_rem_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, cmds=[
-        'pip3 uninstall -y tensor2tensor',
-        'pip3 uninstall -y trax',
-        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
-        f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}'
-    ])
+    if args.reinstall:
+        exec_on_rem_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, cmds=[
+            'pip3 uninstall -y tensor2tensor',
+            'pip3 uninstall -y trax',
+            'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
+            f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}'
+        ])
 
     for gin in gins:
         time.sleep(2)
