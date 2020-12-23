@@ -133,7 +133,7 @@ def deploy_job(ginpath: str, username: str,
                  branch: str, gpu:int, custom_script: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
-    _out_file = _date+'.out'
+    _out_file = _date+'_'+branch+'.out'
     _job_file = 'jobtask.txt'
 
     # overwrite ginpath with ginfile name
