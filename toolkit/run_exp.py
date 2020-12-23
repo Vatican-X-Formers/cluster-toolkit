@@ -111,6 +111,9 @@ source ../../venv/bin/activate
 
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+mv eval/* ./
+mv train/* ./
+rm -rf eval train
     '''.format(
         branch=branch,
         ginfile=ginfile,
@@ -149,6 +152,7 @@ def deploy_job(ginpath: str, username: str,
                       output_dir=_out_dir)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
+
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
 if __name__ == "__main__":
