@@ -105,7 +105,6 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     )
 
     job = '''
-source ../../venv/bin/activate
 python3 -m venv venv
 cp ../../vatican.pth venv/lib/python3.8/site-packages/
 source venv/bin/activate
@@ -160,10 +159,10 @@ def deploy_job(ginpath: str, username: str,
 
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
-def install(rem_host, rem_workspace):
+def install(user: str, rem_host: str, rem_workspace: str):
 
     with open('vatican.pth', 'w+') as vatican:
-        vatican.write(f'/home/{rem_host}/venv/lib/python3.8/site-packages')
+        vatican.write(f'/home/{user}/venv/lib/python3.8/site-packages')
 
     send_to_server(file='req.txt', rem_host=rem_host, rem_workspace=rem_workspace)
     send_to_server(file='vatican.pth', rem_host=rem_host, rem_workspace=rem_workspace)
@@ -202,7 +201,7 @@ if __name__ == "__main__":
  
 
     if args.install:
-        install(rem_host=_rem_host, rem_workspace='')
+        install(user=args.user, rem_host=_rem_host, rem_workspace='')
 
     for gin in gins:
         time.sleep(2)
