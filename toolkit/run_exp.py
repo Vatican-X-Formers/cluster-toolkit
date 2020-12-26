@@ -105,11 +105,7 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     )
 
     job = '''
-python3 -m venv venv
-source venv/bin/activate
-cp ../../vatican.pth venv/lib/python3.8/site-packages
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{branch}
+source ../../venv/bin/activate
 
 {environment}
 
@@ -172,6 +168,8 @@ def install(rem_host, rem_workspace):
         'source venv/bin/activate',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
+        f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}',
         'deactivate'
     ])  
 
@@ -201,12 +199,6 @@ if __name__ == "__main__":
 
     if args.install:
         install(rem_host=_rem_host, rem_workspace='')
-        exec_on_rem_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, cmds=[
-            'pip3 uninstall -y tensor2tensor',
-            'pip3 uninstall -y trax',
-            'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
-            f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}'
-        ])
 
     for gin in gins:
         time.sleep(2)
