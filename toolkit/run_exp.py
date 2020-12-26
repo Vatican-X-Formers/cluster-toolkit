@@ -105,7 +105,11 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     )
 
     job = '''
-source ../../venv/bin/activate
+python3 -m venv venv
+cp ../../vatican.pth venv/lib/python3.8/site-packages/
+source venv/bin/activate
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install matplotlib wheel
+XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --no-deps git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 
 {environment}
 
@@ -155,6 +159,24 @@ def deploy_job(ginpath: str, username: str,
 
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
+def install(user: str, rem_host: str, rem_workspace: str):
+
+    with open('vatican.pth', 'w+') as vatican:
+        vatican.write(f'/home/{user}/venv/lib/python3.8/site-packages')
+
+    send_to_server(file='req.txt', rem_host=rem_host, rem_workspace=rem_workspace)
+    send_to_server(file='vatican.pth', rem_host=rem_host, rem_workspace=rem_workspace)
+    exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
+        'rm -rf venv',
+        'python3 -m venv venv',
+        'source venv/bin/activate',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
+        'deactivate'
+    ])  
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -168,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--script', help='custom script', required=False, type=str)
     parser.add_argument(
-        '--reinstall', action='store_true')
+        '--install', action='store_true')
 
     args = parser.parse_args()
 
@@ -178,13 +200,8 @@ if __name__ == "__main__":
     _rem_workspace = 'vatican_trax_workspace'
  
 
-    if args.reinstall:
-        exec_on_rem_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, cmds=[
-            'pip3 uninstall -y tensor2tensor',
-            'pip3 uninstall -y trax',
-            'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
-            f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/trax.git@{args.branch}'
-        ])
+    if args.install:
+        install(user=args.user, rem_host=_rem_host, rem_workspace='')
 
     for gin in gins:
         time.sleep(2)
