@@ -145,7 +145,7 @@ def deploy_job(ginpath: str, username: str,
 
     # overwrite ginpath with ginfile name
     ginfile = path_leaf(ginpath)
-    _out_dir = ginfile+branch+_date
+    _out_dir = ginfile+'_'+branch+'_'+_date
 
     job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
                      output_dir=_out_dir)
