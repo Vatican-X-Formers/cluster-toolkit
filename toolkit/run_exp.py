@@ -117,7 +117,7 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
 mv eval/* ./
 mv train/* ./
-rm -rf eval train
+rm -rf eval train venv
     '''.format(
         branch=branch,
         ginfile=ginfile,
@@ -140,12 +140,12 @@ def deploy_job(ginpath: str, username: str,
                  branch: str, gpu:int, custom_script: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
-    _out_file = _date+'_'+branch+'.out'
+    _out_file = _date+'_'+'.out'
     _job_file = 'jobtask.txt'
 
     # overwrite ginpath with ginfile name
     ginfile = path_leaf(ginpath)
-    _out_dir = ginfile+_date
+    _out_dir = ginfile+'_'+branch+'_'+_date
 
     job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
                      output_dir=_out_dir)
