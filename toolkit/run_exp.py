@@ -117,7 +117,7 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
 mv eval/* ./
 mv train/* ./
-rm -rf eval train
+rm -rf eval train venv
     '''.format(
         branch=branch,
         ginfile=ginfile,
