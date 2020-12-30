@@ -168,7 +168,7 @@ def download_datasets(rem_host: str, rem_workspace: str):
         'wget http://image-net.org/small/train_32x32.tar',
         'tar -C t -xf valid_32x32.tar download',
         'rm -rf valid_32x32.tar',
-        'tar -C t -xf valid_32x32.tar download',
+        'tar -C t -xf train_32x32.tar download',
         'rm -rf train_32x32.tar'
     ])
 
