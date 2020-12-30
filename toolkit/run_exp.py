@@ -173,7 +173,7 @@ def download_datasets(rem_host: str, rem_workspace: str):
     ])
 
 def install(user: str, rem_host: str, rem_workspace: str):
-    #reinstall(user=user, rem_host=rem_host, rem_workspace=rem_workspace)
+    reinstall(user=user, rem_host=rem_host, rem_workspace=rem_workspace)
     download_datasets(rem_host=rem_host, rem_workspace=rem_workspace)
 
 def reinstall(user: str, rem_host: str, rem_workspace: str):
