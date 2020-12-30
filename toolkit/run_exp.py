@@ -166,9 +166,9 @@ def download_datasets(rem_host: str, rem_workspace: str):
         'mkdir download',
         'wget http://image-net.org/small/valid_32x32.tar',
         'wget http://image-net.org/small/train_32x32.tar',
-        'tar -C t -xf valid_32x32.tar download',
+        'tar -C ~/tensorflow_datasets/download/ -xf valid_32x32.tar',
         'rm -rf valid_32x32.tar',
-        'tar -C t -xf train_32x32.tar download',
+        'tar -C ~/tensorflow_datasets/download/ -xf train_32x32.tar',
         'rm -rf train_32x32.tar'
     ])
 
