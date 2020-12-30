@@ -159,7 +159,24 @@ def deploy_job(ginpath: str, username: str,
 
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
 
+def download_datasets(rem_host: str, rem_workspace: str):
+    exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
+        'mkdir tensorflow_datasets',
+        'cd tensorflow_datasets',
+        'mkdir download',
+        'wget http://image-net.org/small/valid_32x32.tar',
+        'wget http://image-net.org/small/train_32x32.tar',
+        'tar -C t -xf valid_32x32.tar download',
+        'rm -rf valid_32x32.tar',
+        'tar -C t -xf valid_32x32.tar download',
+        'rm -rf train_32x32.tar'
+    ])
+
 def install(user: str, rem_host: str, rem_workspace: str):
+    reinstall(user=user, rem_host=rem_host, rem_workspace=rem_workspace)
+    download_datasets()
+
+def reinstall(user: str, rem_host: str, rem_workspace: str):
 
     with open('vatican.pth', 'w+') as vatican:
         vatican.write(f'/home/{user}/venv/lib/python3.8/site-packages')
@@ -194,6 +211,8 @@ if __name__ == "__main__":
         '--script', help='custom script', required=False, type=str)
     parser.add_argument(
         '--install', action='store_true')
+    parser.add_argument(
+        '--reinstall', action='store_true')
 
     args = parser.parse_args()
 
@@ -205,7 +224,9 @@ if __name__ == "__main__":
 
     if args.install:
         install(user=args.user, rem_host=_rem_host, rem_workspace='')
-
+    elif args.reinstall:
+        reinstall(user=args.user, rem_host=_rem_host, rem_workspace='')
+      
     for gin in gins:
         time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
