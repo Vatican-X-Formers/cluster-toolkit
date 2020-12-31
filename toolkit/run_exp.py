@@ -31,7 +31,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, ginfile: str, ginpath: str,
                       job: str, gpu: int, out_file: str,
                       job_file: str, custom_script: str,
-                      output_dir: str):
+                      output_dir: str, gtype: Union[None, str]):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -73,7 +73,7 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         username=username,
         out_file=out_file,
         meta_file=out_file+'.meta',
-        gpu=gpu,
+        gpu=gpu if not gtype else f'{gtype}:{gpu}',
         job=job,
         ginfile=ginfile,
         job_file=job_file,
@@ -137,7 +137,9 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
     print('Job submitted')
 
 def deploy_job(ginpath: str, username: str,
-                 branch: str, gpu:int, custom_script: Union[str, None]) -> None:
+               branch: str, gpu:int,
+               custom_script: Union[str, None],
+               gtype: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -153,7 +155,7 @@ def deploy_job(ginpath: str, username: str,
                       username=username, ginfile=ginfile, ginpath=ginpath,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
-                      output_dir=_out_dir)
+                      output_dir=_out_dir, gtype=gtype)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
 
@@ -208,6 +210,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', required=False, default=1, type=int)
     parser.add_argument(
+        '--gpu-type', help='type of gpu', required=False, type=int, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
+    parser.add_argument(
         '--script', help='custom script', required=False, type=str)
     parser.add_argument(
         '--install', action='store_true')
@@ -221,7 +225,6 @@ if __name__ == "__main__":
     _rem_host = f'{args.user}@entropy.mimuw.edu.pl'
     _rem_workspace = 'vatican_trax_workspace'
  
-
     if args.install:
         install(user=args.user, rem_host=_rem_host, rem_workspace='')
     elif args.reinstall:
@@ -230,5 +233,5 @@ if __name__ == "__main__":
     for gin in gins:
         time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                     gpu=args.gpu_count, custom_script=args.script)
+                     gpu=args.gpu_count, custom_script=args.script, gtype = args.gpu_type)
         
