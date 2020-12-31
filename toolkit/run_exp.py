@@ -210,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', required=False, default=1, type=int)
     parser.add_argument(
-        '--gpu-type', help='type of gpu', required=False, type=int, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
+        '--gpu-type', help='type of gpu', required=False, type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
     parser.add_argument(
         '--script', help='custom script', required=False, type=str)
     parser.add_argument(
