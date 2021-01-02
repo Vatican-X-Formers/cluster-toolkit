@@ -214,9 +214,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--script', help='custom script', required=False, type=str)
     parser.add_argument(
-        '--install', action='store_true')
+        '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
-        '--reinstall', action='store_true')
+        '--reinstall', action='store_true', help='Reinstall full global venv - without readownloading dataset')
 
     args = parser.parse_args()
 
