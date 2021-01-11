@@ -5,7 +5,11 @@ import time
 import os
 import ntpath
 import time
+import string
+import random
 
+def get_job_name():
+    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
 
 def exit_if_error(code):
     if code != 0:
@@ -51,7 +55,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
     # prepare job
     job_str = R'''#!/bin/bash
 #
-#SBATCH --job-name=job_zpp_vatican_{username}
+#SBATCH --job-name={jobname}
 #SBATCH --partition=common
 #SBATCH --qos=8gpu3d
 #SBATCH --gres=gpu:{gpu}
@@ -70,7 +74,7 @@ cat {ginfile} >> {meta_file}
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
-        username=username,
+        jobname=get_job_name(),
         out_file=out_file,
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
@@ -208,11 +212,11 @@ if __name__ == "__main__":
     parser.add_argument(
         '--branch', help='branch name', required=True, type=str)
     parser.add_argument(
-        '--gpu-count', help='number of gpu', required=False, default=1, type=int)
+        '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
-        '--gpu-type', help='type of gpu', required=False, type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
+        '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
     parser.add_argument(
-        '--script', help='custom script', required=False, type=str)
+        '--script', help='custom script', type=str)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
