@@ -9,7 +9,8 @@ import string
 import random
 
 def get_job_name():
-    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
+    get_str = lambda n: ''.join([random.choice(string.ascii_lowercase) for _ in range(n)])
+    return f"{get_str(2)}-{random.choice(string.digits)}-{get_str(10)}"
 
 def exit_if_error(code):
     if code != 0:
@@ -35,7 +36,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, ginfile: str, ginpath: str,
                       job: str, gpu: int, out_file: str,
                       job_file: str, custom_script: str,
-                      output_dir: str, gtype: Union[None, str]):
+                      output_dir: str, gtype: Union[None, str],
+                      jname: str):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -60,8 +62,10 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --qos=8gpu3d
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --output={out_file}
+# Other options
 
-# find / -type d -maxdepth 4 -name cuda 2>/dev/null
+scancel --state=PENDING --jobname={jobname}
+
 rm -rf ~/.nv/
 nvidia-smi -L
 
@@ -74,7 +78,7 @@ cat {ginfile} >> {meta_file}
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
-        jobname=get_job_name(),
+        jobname=jname,
         out_file=out_file,
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
@@ -143,7 +147,8 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 def deploy_job(ginpath: str, username: str,
                branch: str, gpu:int,
                custom_script: Union[str, None],
-               gtype: Union[str, None]) -> None:
+               gtype: Union[str, None],
+               jobname: str) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -159,7 +164,7 @@ def deploy_job(ginpath: str, username: str,
                       username=username, ginfile=ginfile, ginpath=ginpath,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
-                      output_dir=_out_dir, gtype=gtype)
+                      output_dir=_out_dir, gtype=gtype, jname=jname)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
 
@@ -204,6 +209,8 @@ def reinstall(user: str, rem_host: str, rem_workspace: str):
 
 
 if __name__ == "__main__":
+    _gpus = ['titanx', 'titanv', 'rtx2080ti']
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--gin', help='gin file path', required=True, type=str)
@@ -214,13 +221,15 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
-        '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
+        '--gpu-type', help='type of gpu', type=str, choices=_gpus)
     parser.add_argument(
         '--script', help='custom script', type=str)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
         '--reinstall', action='store_true', help='Reinstall full global venv - without readownloading dataset')
+    parser.add_argument(
+        '--h4x', action='store_true', help='Deploy at any gpu type same type')
 
     args = parser.parse_args()
 
@@ -233,9 +242,14 @@ if __name__ == "__main__":
         install(user=args.user, rem_host=_rem_host, rem_workspace='')
     elif args.reinstall:
         reinstall(user=args.user, rem_host=_rem_host, rem_workspace='')
-      
+
+    args.gpu_type = _gpus if not args.gpu_type and args.h4x else [args.gpu_type]
+    print(args.gpu_type)
     for gin in gins:
         time.sleep(2)
-        deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                     gpu=args.gpu_count, custom_script=args.script, gtype = args.gpu_type)
+        jname = get_job_name()
+        for gt in args.gpu_type:
+            deploy_job(ginpath=gin, username=args.user, branch=args.branch,
+                        gpu=args.gpu_count, custom_script=args.script,
+                        gtype = gt, jobname=jname)
         
