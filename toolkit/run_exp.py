@@ -164,7 +164,7 @@ def deploy_job(ginpath: str, username: str,
                       username=username, ginfile=ginfile, ginpath=ginpath,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
-                      output_dir=_out_dir, gtype=gtype)
+                      output_dir=_out_dir, gtype=gtype, ckpt=ckpt)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
 
