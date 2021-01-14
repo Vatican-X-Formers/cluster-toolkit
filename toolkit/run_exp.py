@@ -35,7 +35,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, ginfile: str, ginpath: str,
                       job: str, gpu: int, out_file: str,
                       job_file: str, custom_script: str,
-                      output_dir: str, gtype: Union[None, str]):
+                      output_dir: str, gtype: Union[None, str],
+                      ckpt: Union[None,str]):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -43,7 +44,9 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 
     # make output dir and remove .nv folder
     exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
-        f'mkdir -p {output_dir}', 'rm -rf ~/.nv/'
+        f'mkdir -p {output_dir}',
+         'rm -rf ~/.nv/',
+         f'cp {ckpt}/*.pkl.gz {output_dir}' if ckpt else ':'
     ])
 
 
@@ -64,6 +67,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
 rm -rf ~/.nv/
 nvidia-smi -L
+nvidia-smi
 
 echo $(nvidia-smi -L) >> {meta_file}
 cat {ginfile} >> {meta_file}
@@ -143,7 +147,8 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 def deploy_job(ginpath: str, username: str,
                branch: str, gpu:int,
                custom_script: Union[str, None],
-               gtype: Union[str, None]) -> None:
+               gtype: Union[str, None],
+               ckpt: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -221,6 +226,8 @@ if __name__ == "__main__":
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
         '--reinstall', action='store_true', help='Reinstall full global venv - without readownloading dataset')
+    parser.add_argument(
+        '--ckpt', type=str, help='Folder name in vatican workspace where checkpoint is stored')
 
     args = parser.parse_args()
 
@@ -237,5 +244,6 @@ if __name__ == "__main__":
     for gin in gins:
         time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                     gpu=args.gpu_count, custom_script=args.script, gtype = args.gpu_type)
+                   gpu=args.gpu_count, custom_script=args.script,
+                   gtype = args.gpu_type, ckpt=args.ckpt)
         
