@@ -227,7 +227,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--reinstall', action='store_true', help='Reinstall full global venv - without readownloading dataset')
     parser.add_argument(
-        '--ckpt', type=str, help='Folder name in vatican workspace where checkpoint is stored')
+        '--ckpt', type=str, required=False, help='Folder name in vatican workspace where checkpoint is stored')
 
     args = parser.parse_args()
 
