@@ -24,7 +24,7 @@ optional arguments:
   --gpu-type {1080ti,titanx,titanv,rtx2080ti}
                         type of gpu
   --node {asusgpu1,asusgpu2,asusgpu3,asusgpu4,asusgpu5,asusgpu6,arnold,steven,sylvester}
-                        type of gpu
+                        node name
   --script SCRIPT       custom script
   --install             Install full global venv along with downloading
                         dataset
