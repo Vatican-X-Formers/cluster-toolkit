@@ -36,7 +36,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
                       job: str, gpu: int, out_file: str,
                       job_file: str, custom_script: str,
                       output_dir: str, gtype: Union[None, str],
-                      ckpt: Union[None,str]):
+                      ckpt: Union[None,str], node: Union[None, str]):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -63,6 +63,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --qos=8gpu3d
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --output={out_file}
+{nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
 rm -rf ~/.nv/
@@ -86,7 +87,8 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         ginfile=ginfile,
         job_file=job_file,
         custom_script=custom_script,
-        output_dir=output_dir
+        output_dir=output_dir,
+        nodelist=f"#SBATCH --nodelist={node}" if node else ''
     )
 
     with open(job_file, 'w') as output:
@@ -148,7 +150,8 @@ def deploy_job(ginpath: str, username: str,
                branch: str, gpu:int,
                custom_script: Union[str, None],
                gtype: Union[str, None],
-               ckpt: Union[str, None]) -> None:
+               ckpt: Union[str, None],
+               node: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -164,7 +167,7 @@ def deploy_job(ginpath: str, username: str,
                       username=username, ginfile=ginfile, ginpath=ginpath,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
-                      output_dir=_out_dir, gtype=gtype, ckpt=ckpt)
+                      output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
 
@@ -221,6 +224,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
     parser.add_argument(
+        '--node', help='type of gpu', required=False, type=str, choices=
+        [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester'])
+    parser.add_argument(
         '--script', help='custom script', type=str)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
@@ -228,6 +234,7 @@ if __name__ == "__main__":
         '--reinstall', action='store_true', help='Reinstall full global venv - without readownloading dataset')
     parser.add_argument(
         '--ckpt', type=str, required=False, help='Folder name in vatican workspace where checkpoint is stored')
+
 
     args = parser.parse_args()
 
@@ -245,5 +252,5 @@ if __name__ == "__main__":
         time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
                    gpu=args.gpu_count, custom_script=args.script,
-                   gtype = args.gpu_type, ckpt=args.ckpt)
+                   gtype = args.gpu_type, ckpt=args.ckpt, node=args.node)
         
