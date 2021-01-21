@@ -115,6 +115,7 @@ def create_job(ginfile: str, branch: str, custom_script: str,
     )
 
     job = '''
+ulimit -n 60000
 python3 -m venv venv
 cp ../../vatican.pth venv/lib/python3.8/site-packages/
 source venv/bin/activate
