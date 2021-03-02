@@ -34,10 +34,6 @@ optional arguments:
                         stored
 ```
 
-### Additional Flags
-- Custom script executed before job: `--script=...`
-- Install required workspace (only for first run or reinstall): `--install`
-
 ### Extra info
-- Don't save checkpoints!
-- `batcher.batch_size_per_device` should be always `4`
+-  Be aware of saving checkpoints
+-  Best `batcher.batch_size_per_device` estimated to `4`
