@@ -46,7 +46,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
     exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
         f'mkdir -p {output_dir}',
          'rm -rf ~/.nv/',
-         f'cp {ckpt}/*.pkl.gz {output_dir}' if ckpt else ':'
+         f'cp {ckpt}/*.pkl.gz {output_dir}' if ckpt else ':',
+         f'cp {ckpt}/*.pkl.gz.npy {output_dir}' if ckpt else ':'
     ])
 
 
