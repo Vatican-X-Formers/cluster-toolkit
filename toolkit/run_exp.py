@@ -114,6 +114,12 @@ def create_job(ginfile: str, branch: str, custom_script: str,
         f'export {k}={v}' for k,v in envs
     )
 
+    if custom_script:
+        exec_line = f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}'
+    else:
+        assert(gin)
+        exec_line = f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./'
+
     job = '''
 ulimit -n 60000
 python3 -m venv venv
@@ -124,15 +130,13 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --no-deps git+https
 
 {environment}
 
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+{exec_line}
 mv eval/* ./
 mv train/* ./
 rm -rf eval train venv
     '''.format(
         branch=branch,
-        ginfile=ginfile,
-        custom_script=custom_script if custom_script else '--version',
+        exec_line=exec_line,
         output_dir=output_dir,
         environment=envs_bash
     )
@@ -215,7 +219,7 @@ def reinstall(user: str, rem_host: str, rem_workspace: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--gin', help='gin file path', required=True, type=str)
+        '--gin', help='gin file path', required=False, type=str)
     parser.add_argument(
         '--user', help='username on the cluster', required=True, type=str)
     parser.add_argument(
@@ -228,7 +232,7 @@ if __name__ == "__main__":
         '--node', help='type of gpu', required=False, type=str, choices=
         [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester'])
     parser.add_argument(
-        '--script', help='custom script', type=str)
+        '--script', help='custom script', type=str, required=False)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
@@ -238,6 +242,9 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
+
+    if bool(args.gin) ^ bool(args.script):
+        parser.error("One of --gin and --script required")
 
     gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
 
