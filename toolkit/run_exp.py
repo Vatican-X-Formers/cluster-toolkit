@@ -17,6 +17,8 @@ def exit_if_error(code):
         exit(1)
 
 def path_leaf(path):
+    if path is None:
+        return None
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
@@ -32,9 +34,10 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
     ]).returncode)
     
 def prepare_workspace(rem_host: str, rem_workspace: str,
-                      username: str, ginfile: str, ginpath: str,
+                      username: str, ginfile: Union[None, str], ginpath: Union[None, str],
                       job: str, gpu: int, out_file: str,
-                      job_file: str, custom_script: str,
+                      job_file: str, custom_script: Union[None, str],
+                      custom_script_path: Union[None, str],
                       output_dir: str, gtype: Union[None, str],
                       ckpt: Union[None,str], node: Union[None, str]):
     # create workspace if not exists
@@ -52,7 +55,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 
 
     # copy ginfile to remote
-    send_to_server(ginpath, rem_host, os.path.join(rem_workspace, output_dir))
+    item = ginpath if ginfile else custom_script_path
+    send_to_server(item, rem_host, os.path.join(rem_workspace, output_dir))
     send_to_server('req.txt', rem_host, os.path.join(rem_workspace, output_dir))
 
     # prepare job
@@ -71,7 +75,7 @@ nvidia-smi -L
 nvidia-smi
 
 echo $(nvidia-smi -L) >> {meta_file}
-cat {ginfile} >> {meta_file}
+cat {dump_file} >> {meta_file}
 
 {job}
 
@@ -84,9 +88,8 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
         job=job,
-        ginfile=ginfile,
+        dump_file=ginfile if ginfile else custom_script,
         job_file=job_file,
-        custom_script=custom_script,
         output_dir=output_dir,
         nodelist=f"#SBATCH --nodelist={node}" if node else ''
     )
@@ -153,7 +156,7 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 
 def deploy_job(ginpath: str, username: str,
                branch: str, gpu:int,
-               custom_script: Union[str, None],
+               custom_script_path: Union[str, None],
                gtype: Union[str, None],
                ckpt: Union[str, None],
                node: Union[str, None]) -> None:
@@ -164,6 +167,7 @@ def deploy_job(ginpath: str, username: str,
 
     # overwrite ginpath with ginfile name
     ginfile = path_leaf(ginpath)
+    custom_script = path_leaf(custom_script_path)
     _out_dir = ginfile+'_'+branch+'_'+_date
 
     job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
@@ -172,6 +176,7 @@ def deploy_job(ginpath: str, username: str,
                       username=username, ginfile=ginfile, ginpath=ginpath,
                       job=job, gpu=gpu, out_file=_out_file,
                       job_file= _job_file, custom_script=custom_script,
+                      custom_script_path=custom_script_path,
                       output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
@@ -259,6 +264,6 @@ if __name__ == "__main__":
     for gin in gins:
         time.sleep(2)
         deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                   gpu=args.gpu_count, custom_script=args.script,
+                   gpu=args.gpu_count, custom_script_path=args.script,
                    gtype = args.gpu_type, ckpt=args.ckpt, node=args.node)
         
