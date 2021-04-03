@@ -226,7 +226,7 @@ if __name__ == "__main__":
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
     parser.add_argument(
         '--node', help='type of gpu', required=False, type=str, choices=
-        [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester'])
+        [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester', 'bruce'])
     parser.add_argument(
         '--script', help='custom script', type=str)
     parser.add_argument(
