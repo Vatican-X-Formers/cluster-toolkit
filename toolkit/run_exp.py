@@ -35,7 +35,7 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
     
 def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, filename: str, filepath: str,
-                      job: str, gpu: int, out_file: str,
+                      job: str, gpu: int, out_file: str, job_file: str,
                       output_dir: str, gtype: Union[None, str],
                       ckpt: Union[None,str], node: Union[None, str]):
     # create workspace if not exists
@@ -86,7 +86,6 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
         job=job,
         dump_file=filename,
-        job_file=job_file,
         output_dir=output_dir,
         nodelist=f"#SBATCH --nodelist={node}" if node else ''
     )
@@ -100,7 +99,7 @@ echo "Welcome to Vice City. Welcome to the 1980s."
     print('[INFO] Workspace prepared') 
 
 
-def create_job(exec_line: str, branch: str, custom_script: str,
+def create_job(exec_line: str, branch: str,
                output_dir: str) -> str:
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
@@ -261,12 +260,14 @@ if __name__ == "__main__":
 
             exec_line, filename, filepath = target_info(True, gin)  
             time.sleep(2)
-            deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                    gpu=args.gpu_count, custom_script_path=args.script,
-                    gtype = args.gpu_type, ckpt=args.ckpt, node=args.node)
+            deploy_job(username=args.user, branch=args.branch,
+                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
+                    node=args.node)
     else:
         exec_line, filename, filepath = target_info(False, args.script)  
-        deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                    gpu=args.gpu_count, custom_script_path=args.script,
-                    gtype = args.gpu_type, ckpt=args.ckpt, node=args.node)
+        deploy_job(username=args.user, branch=args.branch,
+                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
+                    node=args.node)
         
