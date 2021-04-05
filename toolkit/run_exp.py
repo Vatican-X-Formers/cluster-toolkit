@@ -12,7 +12,7 @@ def get_job_name_v1():
     return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
 
 def get_job_name_v2():
-    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(3)])}#{random.choice(string.digits)}"
+    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(3)])}@{random.choice(string.digits)}"
 
 def get_job_name():
     f = random.choice([get_job_name_v1, get_job_name_v2])
