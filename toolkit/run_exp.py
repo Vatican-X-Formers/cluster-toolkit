@@ -8,8 +8,15 @@ import time
 import string
 import random
 
-def get_job_name():
+def get_job_name_v1():
     return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
+
+def get_job_name_v2():
+    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(3)])}@{random.choice(string.digits)}"
+
+def get_job_name():
+    f = random.choice([get_job_name_v1, get_job_name_v2])
+    return f()
 
 def exit_if_error(code):
     if code != 0:
@@ -17,6 +24,8 @@ def exit_if_error(code):
         exit(1)
 
 def path_leaf(path):
+    if path is None:
+        return None
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
@@ -32,9 +41,8 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
     ]).returncode)
     
 def prepare_workspace(rem_host: str, rem_workspace: str,
-                      username: str, ginfile: str, ginpath: str,
-                      job: str, gpu: int, out_file: str,
-                      job_file: str, custom_script: str,
+                      username: str, filename: str, filepath: str,
+                      job: str, gpu: int, out_file: str, job_file: str,
                       output_dir: str, gtype: Union[None, str],
                       ckpt: Union[None,str], node: Union[None, str]):
     # create workspace if not exists
@@ -52,7 +60,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 
 
     # copy ginfile to remote
-    send_to_server(ginpath, rem_host, os.path.join(rem_workspace, output_dir))
+    send_to_server(filepath, rem_host, os.path.join(rem_workspace, output_dir))
     send_to_server('req.txt', rem_host, os.path.join(rem_workspace, output_dir))
 
     # prepare job
@@ -71,7 +79,7 @@ nvidia-smi -L
 nvidia-smi
 
 echo $(nvidia-smi -L) >> {meta_file}
-cat {ginfile} >> {meta_file}
+cat {dump_file} >> {meta_file}
 
 {job}
 
@@ -84,9 +92,7 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
         job=job,
-        ginfile=ginfile,
-        job_file=job_file,
-        custom_script=custom_script,
+        dump_file=filename,
         output_dir=output_dir,
         nodelist=f"#SBATCH --nodelist={node}" if node else ''
     )
@@ -97,14 +103,10 @@ echo "Welcome to Vice City. Welcome to the 1980s."
     # copy ginfile to remote
     send_to_server(job_file, rem_host, os.path.join(rem_workspace, output_dir))
 
-    # copy custom script to remote
-    if custom_script:
-        send_to_server(custom_script, rem_host, os.path.join(rem_workspace, output_dir))
-
     print('[INFO] Workspace prepared') 
 
 
-def create_job(ginfile: str, branch: str, custom_script: str,
+def create_job(exec_line: str, branch: str,
                output_dir: str) -> str:
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
@@ -124,15 +126,13 @@ XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --no-deps git+https
 
 {environment}
 
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {custom_script}
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={ginfile} --output_dir=./
+{exec_line}
 mv eval/* ./
 mv train/* ./
 rm -rf eval train venv
     '''.format(
         branch=branch,
-        ginfile=ginfile,
-        custom_script=custom_script if custom_script else '--version',
+        exec_line=exec_line,
         output_dir=output_dir,
         environment=envs_bash
     )
@@ -147,9 +147,9 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
                           cmds=cmds)
     print('Job submitted')
 
-def deploy_job(ginpath: str, username: str,
+def deploy_job(filepath: str, filename:str, 
+               exec_line, username: str,
                branch: str, gpu:int,
-               custom_script: Union[str, None],
                gtype: Union[str, None],
                ckpt: Union[str, None],
                node: Union[str, None]) -> None:
@@ -158,16 +158,14 @@ def deploy_job(ginpath: str, username: str,
     _out_file = _date+'_'+'.out'
     _job_file = 'jobtask.txt'
 
-    # overwrite ginpath with ginfile name
-    ginfile = path_leaf(ginpath)
-    _out_dir = ginfile+'_'+branch+'_'+_date
 
-    job = create_job(ginfile=ginfile, branch=branch, custom_script=custom_script,
-                     output_dir=_out_dir)
+    _out_dir = filename+'_'+branch+'_'+_date
+
+    job = create_job(exec_line=exec_line, branch=branch, output_dir=_out_dir)
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, 
-                      username=username, ginfile=ginfile, ginpath=ginpath,
-                      job=job, gpu=gpu, out_file=_out_file,
-                      job_file= _job_file, custom_script=custom_script,
+                      username=username, filepath=filepath,
+                      filename=filename, job=job, gpu=gpu,
+                      out_file=_out_file, job_file= _job_file,
                       output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
@@ -209,13 +207,25 @@ def reinstall(user: str, rem_host: str, rem_workspace: str):
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
         'deactivate'
-    ])  
+    ])
+
+
+
+def target_info(is_gin: bool, filepath):
+    filename = path_leaf(filepath)
+    if not is_gin:
+        exec_line = f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 {filename}'
+    else:
+        assert(gin)
+        exec_line = f'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda python3 -m trax.trainer --config_file={filename} --output_dir=./'
+    return exec_line, filename, filepath
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--gin', help='gin file path', required=True, type=str)
+        '--gin', help='gin file path', required=False, type=str)
     parser.add_argument(
         '--user', help='username on the cluster', required=True, type=str)
     parser.add_argument(
@@ -228,7 +238,7 @@ if __name__ == "__main__":
         '--node', help='type of gpu', required=False, type=str, choices=
         [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester', 'bruce'])
     parser.add_argument(
-        '--script', help='custom script', type=str)
+        '--script', help='custom script', type=str, required=False)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
     parser.add_argument(
@@ -238,8 +248,9 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-
-    gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
+    print(args.script, args.gin, bool(args.script), bool(args.gin))
+    if not (bool(args.gin) ^ bool(args.script)):
+        parser.error("One of --gin and --script required")
 
     _rem_host = f'{args.user}@entropy.mimuw.edu.pl'
     _rem_workspace = 'vatican_trax_workspace'
@@ -248,10 +259,22 @@ if __name__ == "__main__":
         install(user=args.user, rem_host=_rem_host, rem_workspace='')
     elif args.reinstall:
         reinstall(user=args.user, rem_host=_rem_host, rem_workspace='')
-      
-    for gin in gins:
-        time.sleep(2)
-        deploy_job(ginpath=gin, username=args.user, branch=args.branch,
-                   gpu=args.gpu_count, custom_script=args.script,
-                   gtype = args.gpu_type, ckpt=args.ckpt, node=args.node)
+
+    if args.gin:
+        gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
+
+        for gin in gins:
+
+            exec_line, filename, filepath = target_info(True, gin)  
+            time.sleep(2)
+            deploy_job(username=args.user, branch=args.branch,
+                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
+                    node=args.node)
+    else:
+        exec_line, filename, filepath = target_info(False, args.script)  
+        deploy_job(username=args.user, branch=args.branch,
+                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
+                    node=args.node)
         
