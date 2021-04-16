@@ -200,11 +200,11 @@ def reinstall(user: str, rem_host: str, rem_workspace: str):
         'rm -rf venv',
         'python3 -m venv venv',
         'source venv/bin/activate',
-        'pip3 install --upgrade pip',
+        'pip3 install pip==20.2.4',
         'pip3 install cmake scikit-build',
         'pip3 install --upgrade pip setuptools wheel',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt',
-        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jax jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
+        'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/Vatican-X-Formers/tensor2tensor.git@imagenet_funnel',
         'deactivate'
     ])
