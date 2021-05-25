@@ -27,7 +27,3 @@ optional arguments:
   --reinstall           Reinstall full global venv - without readownloading dataset
   --ckpt CKPT           Folder name in vatican workspace where checkpoint is stored
 ```
-
-### Extra info
--  Be aware of saving checkpoints
--  Best `batcher.batch_size_per_device` estimated to `4`
