@@ -42,8 +42,8 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
     
 def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, filename: str, filepath: str,
-                      job: str, gpu: int, out_file: str, job_file: str,
-                      output_dir: str, gtype: Union[None, str],
+                      job: str, gpu: int, max_time: str, out_file: str,
+                      job_file: str, output_dir: str, gtype: Union[None, str],
                       ckpt: Union[None,str], node: Union[None, str]):
     # create workspace if not exists
     exit_if_error(subprocess.run([
@@ -70,6 +70,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --partition=common
 #SBATCH --qos=8gpu3d
 #SBATCH --gres=gpu:{gpu}
+#SBATCH --time={time}
 #SBATCH --output={out_file}
 {nodelist}
 
@@ -91,6 +92,7 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         out_file=out_file,
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
+        time=max_time,
         job=job,
         dump_file=filename,
         output_dir=output_dir,
@@ -149,7 +151,7 @@ def run_job(rem_host: str, rem_workspace: str, job_file: str):
 
 def deploy_job(filepath: str, filename:str, 
                exec_line, username: str,
-               branch: str, gpu:int,
+               branch: str, gpu:int, max_time: str,
                gtype: Union[str, None],
                ckpt: Union[str, None],
                node: Union[str, None]) -> None:
@@ -164,7 +166,7 @@ def deploy_job(filepath: str, filename:str,
     job = create_job(exec_line=exec_line, branch=branch, output_dir=_out_dir)
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, 
                       username=username, filepath=filepath,
-                      filename=filename, job=job, gpu=gpu,
+                      filename=filename, job=job, gpu=gpu, max_time=max_time,
                       out_file=_out_file, job_file= _job_file,
                       output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
@@ -233,6 +235,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
+        '--time', help='maximum job time, see recent mail', default="1-0",
+        type=str)
+    parser.add_argument(
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
     parser.add_argument(
         '--node', help='type of gpu', required=False, type=str, choices=
@@ -268,13 +273,15 @@ if __name__ == "__main__":
             exec_line, filename, filepath = target_info(True, gin)  
             time.sleep(2)
             deploy_job(username=args.user, branch=args.branch,
-                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    gpu=args.gpu_count, max_time=args.time,
+                    filename=filename, filepath=filepath,
                     exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
                     node=args.node)
     else:
         exec_line, filename, filepath = target_info(False, args.script)  
         deploy_job(username=args.user, branch=args.branch,
-                    gpu=args.gpu_count, filename=filename, filepath=filepath,
+                    gpu=args.gpu_count, max_time=args.time,
+                    filename=filename, filepath=filepath,
                     exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
                     node=args.node)
         
