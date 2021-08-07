@@ -241,7 +241,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
-        '--time', help='maximum job time, see recent mail', default="1-0",
+        '--time', help='maximum job time, see recent mail', default="3-0",
         type=str)
     parser.add_argument(
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
