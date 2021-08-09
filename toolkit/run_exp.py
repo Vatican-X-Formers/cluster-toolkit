@@ -7,6 +7,7 @@ import ntpath
 import time
 import string
 import random
+import json
 
 def get_job_name_v1():
     return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
@@ -54,7 +55,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
     exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
         f'mkdir -p {output_dir}',
          'rm -rf ~/.nv/',
-         f'cp {ckpt}/*.pkl.gz {output_dir}' if ckpt else ':'
+         f'cp {ckpt}/* {output_dir}' if ckpt else ':'
     ])
 
 
@@ -110,9 +111,14 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
 def create_job(exec_line: str, branch: str,
                output_dir: str) -> str:
+    with open('neptune_props.json') as neptune_props_file:
+      neptune_props = json.load(neptune_props_file)
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
-            ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH')]
+            ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH'),
+            ('TRAX_BRANCH', branch),
+            ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
+            ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN'])]
 
     envs_bash = '\n'.join(
         f'export {k}={v}' for k,v in envs
@@ -235,7 +241,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
-        '--time', help='maximum job time, see recent mail', default="1-0",
+        '--time', help='maximum job time, see recent mail', default="3-0",
         type=str)
     parser.add_argument(
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
