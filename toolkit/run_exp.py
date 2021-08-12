@@ -127,7 +127,7 @@ def create_job(exec_line: str, branch: str,
     job = '''
 ulimit -n 60000
 python3 -m venv venv
-cp ../../vatican.pth venv/lib/python3.8/site-packages/
+cp ~/vatican.pth venv/lib/python3.8/site-packages/
 source venv/bin/activate
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install matplotlib wheel
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --no-deps git+https://github.com/Vatican-X-Formers/trax.git@{branch}
