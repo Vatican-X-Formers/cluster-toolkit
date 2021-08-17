@@ -118,7 +118,9 @@ def create_job(exec_line: str, branch: str,
             ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH'),
             ('TRAX_BRANCH', branch),
             ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
-            ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN'])]
+            ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN']),
+            ('XLA_PYTHON_CLIENT_PREALLOCATE', 'false'),
+            ('XLA_PYTHON_CLIENT_ALLOCATOR', 'platform')]
 
     envs_bash = '\n'.join(
         f'export {k}={v}' for k,v in envs
