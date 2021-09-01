@@ -59,6 +59,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
     ]).returncode)
 
     # make output dir and remove .nv folder
+    kth = username[2]
     exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
         f'mkdir -p {output_dir}',
          'rm -rf ~/.nv/',
@@ -96,7 +97,7 @@ cat {dump_file} >> {meta_file}
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
-        jobname=gjn(),
+        jobname=gjn(kth),
         out_file=out_file,
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
