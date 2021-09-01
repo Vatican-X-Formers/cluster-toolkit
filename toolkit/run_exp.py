@@ -9,15 +9,22 @@ import string
 import random
 import json
 
-def get_job_name_v1():
+def v1():
     return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}-{random.choice(string.digits)}"
 
-def get_job_name_v2():
-    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(3)])}@{random.choice(string.digits)}"
+def v2():
+    return f"{''.join([random.choice(string.ascii_lowercase) for _ in range(2)])}@Transformer"
 
-def get_job_name():
-    f = random.choice([get_job_name_v1, get_job_name_v2])
-    return f()
+def v3():
+    return f"{random.randint(0,999)}"
+
+def v4():
+    return 'python3'
+
+job_signature = {'y': v1, 'a':v2, 'j':v3, 'w':v4}
+
+def gjn(sig):
+    return job_signature[sig]()
 
 def exit_if_error(code):
     if code != 0:
@@ -89,7 +96,7 @@ cat {dump_file} >> {meta_file}
 
 echo "Welcome to Vice City. Welcome to the 1980s."
     '''.format(
-        jobname=get_job_name(),
+        jobname=gjn(),
         out_file=out_file,
         meta_file=out_file+'.meta',
         gpu=gpu if not gtype else f'{gtype}:{gpu}',
@@ -118,7 +125,9 @@ def create_job(exec_line: str, branch: str,
             ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH'),
             ('TRAX_BRANCH', branch),
             ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
-            ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN'])]
+            ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN']),
+            ('XLA_PYTHON_CLIENT_PREALLOCATE', 'false'),
+            ('XLA_PYTHON_CLIENT_ALLOCATOR', 'platform')]
 
     envs_bash = '\n'.join(
         f'export {k}={v}' for k,v in envs
