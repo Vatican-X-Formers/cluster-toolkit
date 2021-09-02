@@ -77,7 +77,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #
 #SBATCH --job-name={jobname}
 #SBATCH --partition=common
-#SBATCH --qos=8gpu3d
+#SBATCH --qos=16gpu3d
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
