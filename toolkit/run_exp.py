@@ -124,6 +124,8 @@ def create_job(exec_line: str, branch: str,
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
             ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH'),
+            ('CUDA_HOME', '/usr/local/cuda-11'),
+            ('PATH', '/usr/local/cuda-11/bin:/usr/local/cuda-11/lib64:$PATH'),
             ('TRAX_BRANCH', branch),
             ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
             ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN']),
@@ -140,13 +142,19 @@ python3 -m venv venv
 cp ~/vatican.pth venv/lib/python3.8/site-packages/
 source venv/bin/activate
 XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install matplotlib wheel
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --no-deps git+https://github.com/Vatican-X-Formers/trax.git@{branch}
 
 {environment}
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip install -v --disable-pip-version-check --no-cache-dir ./
+cd ..
 
-{exec_line}
-mv eval/* ./
-mv train/* ./
+git clone https://github.com/Vatican-X-Formers/xl.git --branch enwik-base
+cd xl
+bash getdata.sh
+cd pytorch
+mkdir train_dir
+bash run_enwik8_base.sh train --work_dir train_dir
 rm -rf eval train venv
     '''.format(
         branch=branch,
@@ -222,6 +230,9 @@ def reinstall(user: str, rem_host: str, rem_workspace: str):
         'pip3 install cmake scikit-build',
         'pip3 install --upgrade pip setuptools wheel',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install -r req.txt',
+        'pip3 install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1+cu111 -f https://download.pytorch.org/whl/cu111/torch_stable.html',
+        'pip3 install nvidia-pyindex git+https://github.com/NVIDIA/dllogger.git',
+        'pip install pytorch-transformers==1.1.0 sacremoses==0.0.35 pynvml==8.0.4',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install --upgrade jaxlib==0.1.57+cuda111 -f https://storage.googleapis.com/jax-releases/jax_releases.html',
         'XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install git+https://github.com/syzymon/tensor2tensor.git@master',
         'deactivate'
