@@ -81,6 +81,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
+#SBATCH --mem=60G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -124,8 +125,9 @@ def create_job(exec_line: str, branch: str,
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
             ('LD_LIBRARY_PATH','/usr/local/cuda-11/lib64:$LD_LIBRARY_PATH'),
             ('LD_LIBRARY_PATH','/usr/lib/cuda/lib64:$LD_LIBRARY_PATH'),
-            ('CUDA_HOME', '/usr/local/cuda-11'),
-            ('PATH', '/usr/local/cuda-11/bin:/usr/local/cuda-11/lib64:$PATH'),
+            #('CUDA_HOME', '/usr/local/cuda-11'),
+            #('PATH', '/usr/local/cuda-11/bin:/usr/local/cuda-11/lib64:$PATH'),
+            ('NEPTUNE_API_TOKEN', 'eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJlMTcxMzI2My1jOTY1LTQ5MjAtOGMzNC1jNmNhMzRlOGI3MGUifQ=='),
             ('TRAX_BRANCH', branch),
             ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
             ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN']),
@@ -149,12 +151,13 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir ./
 cd ..
 
-git clone https://github.com/Vatican-X-Formers/xl.git --branch enwik-base
+git clone https://github.com/Vatican-X-Formers/xl.git --branch wt103
 cd xl
 bash getdata.sh
 cd pytorch
 mkdir train_dir
 bash run_enwik8_base.sh train --work_dir train_dir
+bash run_wt103_base.sh train 2 --config dgx1_1gpu_fp32
 rm -rf eval train venv
     '''.format(
         branch=branch,
