@@ -81,7 +81,6 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
-#SBATCH --mem=110G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -140,24 +139,14 @@ def create_job(exec_line: str, branch: str,
 
     job = '''
 ulimit -n 60000
-python3 -m venv venv
-cp ~/vatican.pth venv/lib/python3.8/site-packages/
-source venv/bin/activate
-XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/lib/cuda pip3 install matplotlib wheel
+. ~/venv/bin/activate
 
 {environment}
-git clone https://github.com/NVIDIA/apex
-cd apex
-pip install -v --disable-pip-version-check --no-cache-dir ./
-cd ..
-
-git clone https://github.com/Vatican-X-Formers/xl.git --branch wt103
+git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
 cd xl
 bash getdata.sh
 cd pytorch
-mkdir train_dir
-bash run_wt103_base.sh train 8 --config dgx1_4gpu_fp32
-rm -rf eval train venv
+bash run_enwik8_base_ddp.sh train 4 --config dgx1_4gpu_fp32
     '''.format(
         branch=branch,
         exec_line=exec_line,
