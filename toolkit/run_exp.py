@@ -81,7 +81,6 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
-#SBATCH --mem=80G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -119,7 +118,8 @@ echo "Welcome to Vice City. Welcome to the 1980s."
 
 
 def create_job(exec_line: str, branch: str,
-               output_dir: str) -> str:
+               output_dir: str, gpu_count: int,
+               ginfile: str) -> str:
     with open('neptune_props.json') as neptune_props_file:
       neptune_props = json.load(neptune_props_file)
     envs = [('TF_FORCE_GPU_ALLOW_GROWTH','true'),
@@ -144,15 +144,23 @@ ulimit -n 60000
 
 {environment}
 git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
+mv {ginfile} xl/pytorch/enwik8_base.yaml
 cd xl
+
+mkdir data
+cp -r ~/xl_ds_cache/enwik8 data
 bash getdata.sh
+
 cd pytorch
-bash run_enwik8_base_ddp.sh train 4 --config dgx1_4gpu_fp32
+bash run_enwik8_base_ddp.sh train {gpu_count} --config gpu_{gpu_count}
+rm -rf ../data
     '''.format(
         branch=branch,
         exec_line=exec_line,
         output_dir=output_dir,
-        environment=envs_bash
+        environment=envs_bash,
+        gpu_count=gpu_count,
+        ginfile=ginfile,
     )
 
     print('[INFO] Job generated')
@@ -179,7 +187,8 @@ def deploy_job(filepath: str, filename:str,
 
     _out_dir = filename+'_'+branch+'_'+_date
 
-    job = create_job(exec_line=exec_line, branch=branch, output_dir=_out_dir)
+    job = create_job(exec_line=exec_line, branch=branch, output_dir=_out_dir,
+                     gpu_count=gpu, ginfile=filename)
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace, 
                       username=username, filepath=filepath,
                       filename=filename, job=job, gpu=gpu, max_time=max_time,
