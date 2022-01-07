@@ -81,6 +81,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
+#SBATCH --mem=100G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -152,7 +153,7 @@ cp -r ~/xl_ds_cache/enwik8 data
 bash getdata.sh
 
 cd pytorch
-bash run_enwik8_base_ddp.sh train {gpu_count} --config gpu_{gpu_count}
+bash run_wt103_base.sh train {gpu_count} --config dgx1_{gpu_count_half}gpu_fp32
 rm -rf ../data
     '''.format(
         branch=branch,
@@ -160,6 +161,7 @@ rm -rf ../data
         output_dir=output_dir,
         environment=envs_bash,
         gpu_count=gpu_count,
+        gpu_count_half=gpu_count//2,
         ginfile=ginfile,
     )
 
