@@ -148,7 +148,7 @@ mv {ginfile} xl/pytorch/enwik8_base.yaml
 cd xl
 
 mkdir data
-cp -r ~/xl_ds_cache/enwik8 data
+ln -s ~/xl_ds_cache/enwik8 data
 bash getdata.sh
 
 cd pytorch
