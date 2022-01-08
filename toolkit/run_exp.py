@@ -81,7 +81,6 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
-#SBATCH --mem=100G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -145,11 +144,10 @@ ulimit -n 60000
 
 {environment}
 git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
-mv {ginfile} xl/pytorch/enwik8_base.yaml
+mv {ginfile} xl/pytorch/wt103_base.yaml
 cd xl
 
 mkdir data
-cp -r ~/xl_ds_cache/enwik8 data
 bash getdata.sh
 
 cd pytorch
