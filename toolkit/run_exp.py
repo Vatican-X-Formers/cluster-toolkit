@@ -81,6 +81,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
+#SBATCH --mem=80G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -148,6 +149,7 @@ mv {ginfile} xl/pytorch/wt103_base.yaml
 cd xl
 
 mkdir data
+ln -s ~/xl_ds_cache/wikitext-103 data
 bash getdata.sh
 
 cd pytorch
