@@ -81,7 +81,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
-#SBATCH --mem=80G
+#SBATCH --mem=50G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -161,7 +161,7 @@ rm -rf ../data
         output_dir=output_dir,
         environment=envs_bash,
         gpu_count=gpu_count,
-        gpu_count_half=gpu_count//2,
+        gpu_count_half=gpu_count//4,
         ginfile=ginfile,
     )
 
