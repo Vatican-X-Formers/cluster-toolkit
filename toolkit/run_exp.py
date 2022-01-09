@@ -81,7 +81,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --gres=gpu:{gpu}
 #SBATCH --time={time}
 #SBATCH --output={out_file}
-#SBATCH --mem=80G
+#SBATCH --mem=50G
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -153,7 +153,7 @@ ln -s ~/xl_ds_cache/wikitext-103 data
 bash getdata.sh
 
 cd pytorch
-bash run_wt103_base.sh train {gpu_count} --config dgx1_{gpu_count_half}gpu_fp32
+bash run_wt103_base.sh train {gpu_count}
 rm -rf ../data
     '''.format(
         branch=branch,
