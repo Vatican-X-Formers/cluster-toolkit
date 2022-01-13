@@ -52,7 +52,8 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
                       username: str, filename: str, filepath: str,
                       job: str, gpu: int, max_time: str, out_file: str,
                       job_file: str, output_dir: str, gtype: Union[None, str],
-                      ckpt: Union[None,str], node: Union[None, str]):
+                      ckpt: Union[None,str], node: Union[None, str],
+                      mem: Union[None, str]):
     # create workspace if not exists
     exit_if_error(subprocess.run([
         'ssh', rem_host, f'mkdir -p {rem_workspace}'
@@ -82,6 +83,7 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 #SBATCH --time={time}
 #SBATCH --output={out_file}
 #SBATCH --mem=50G
+{mem_requirement}
 {nodelist}
 
 # find / -type d -maxdepth 4 -name cuda 2>/dev/null
@@ -106,7 +108,8 @@ echo "Welcome to Vice City. Welcome to the 1980s."
         job=job,
         dump_file=filename,
         output_dir=output_dir,
-        nodelist=f"#SBATCH --nodelist={node}" if node else ''
+        nodelist=f"#SBATCH --nodelist={node}" if node else '',
+        mem_requirement=f'#SBATCH --mem={mem}' if mem else '',
     )
 
     with open(job_file, 'w') as output:
@@ -145,23 +148,20 @@ ulimit -n 60000
 
 {environment}
 git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
-mv {ginfile} xl/pytorch/wt103_base.yaml
+mv {ginfile} xl/pytorch
 cd xl
 
-mkdir data
-ln -s ~/xl_ds_cache/wikitext-103 data
+ln -s ~/xl_ds_cache data
 bash getdata.sh
 
 cd pytorch
-bash run_wt103_base.sh train {gpu_count} --config dgx1_{gpu_count_half}gpu_fp32
-rm -rf ../data
+bash train.sh {ginfile} {gpu_count} --config gpu_{gpu_count}
     '''.format(
         branch=branch,
         exec_line=exec_line,
         output_dir=output_dir,
         environment=envs_bash,
         gpu_count=gpu_count,
-        gpu_count_half=gpu_count//4,
         ginfile=ginfile,
     )
 
@@ -180,7 +180,8 @@ def deploy_job(filepath: str, filename:str,
                branch: str, gpu:int, max_time: str,
                gtype: Union[str, None],
                ckpt: Union[str, None],
-               node: Union[str, None]) -> None:
+               node: Union[str, None],
+               mem: Union[str, None]) -> None:
     
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -195,7 +196,8 @@ def deploy_job(filepath: str, filename:str,
                       username=username, filepath=filepath,
                       filename=filename, job=job, gpu=gpu, max_time=max_time,
                       out_file=_out_file, job_file= _job_file,
-                      output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node)
+                      output_dir=_out_dir, gtype=gtype, ckpt=ckpt, node=node,
+                      mem=mem)
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
             job_file=_job_file)
 
@@ -273,6 +275,8 @@ if __name__ == "__main__":
         '--node', help='type of gpu', required=False, type=str, choices=
         [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester', 'bruce'])
     parser.add_argument(
+        '--mem', help='cpu memory', required=False, default=None, type=str)
+    parser.add_argument(
         '--script', help='custom script', type=str, required=False)
     parser.add_argument(
         '--install', action='store_true', help='Install full global venv along with downloading dataset')
@@ -306,12 +310,12 @@ if __name__ == "__main__":
                     gpu=args.gpu_count, max_time=args.time,
                     filename=filename, filepath=filepath,
                     exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
-                    node=args.node)
+                    node=args.node, mem=args.mem)
     else:
         exec_line, filename, filepath = target_info(False, args.script)  
         deploy_job(username=args.user, branch=args.branch,
                     gpu=args.gpu_count, max_time=args.time,
                     filename=filename, filepath=filepath,
                     exec_line=exec_line, gtype = args.gpu_type, ckpt=args.ckpt,
-                    node=args.node)
+                    node=args.node, mem=args.mem)
         
