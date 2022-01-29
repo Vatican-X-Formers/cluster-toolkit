@@ -202,6 +202,8 @@ def deploy_job(filepath: str, filename:str,
             job_file=_job_file)
 
     print(f'Output will be saved in\n{_rem_host}:~/{_rem_workspace}/{_out_dir}')
+    os.remove(_job_file)
+
 
 def download_datasets(rem_host: str, rem_workspace: str):
     exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=[
