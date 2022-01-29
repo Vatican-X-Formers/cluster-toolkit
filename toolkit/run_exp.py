@@ -144,14 +144,14 @@ def create_job(exec_line: str, branch: str,
 
     job = '''
 ulimit -n 60000
-. ~/venv/bin/activate
+. /home/pnawrot/venv/bin/activate
 
 {environment}
 git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
 mv {ginfile} xl/pytorch
 cd xl
 
-ln -s ~/xl_ds_cache data
+ln -s /home/pnawrot/xl_ds_cache data
 bash getdata.sh
 
 cd pytorch
