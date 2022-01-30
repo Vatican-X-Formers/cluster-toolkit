@@ -151,7 +151,7 @@ git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
 mv {ginfile} xl/pytorch
 cd xl
 
-ln -s /home/pnawrot/xl_ds_cache data
+ln -s /home/pnawrot/piotrek/datasets/ data
 bash getdata.sh
 
 cd pytorch
