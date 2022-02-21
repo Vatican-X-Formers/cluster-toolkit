@@ -136,7 +136,8 @@ def create_job(exec_line: str, branch: str,
             ('NEPTUNE_PROJECT', neptune_props['NEPTUNE_PROJECT']),
             ('NEPTUNE_TOKEN', neptune_props['NEPTUNE_TOKEN']),
             ('XLA_PYTHON_CLIENT_PREALLOCATE', 'false'),
-            ('XLA_PYTHON_CLIENT_ALLOCATOR', 'platform')]
+            ('XLA_PYTHON_CLIENT_ALLOCATOR', 'platform'),
+            ('EXPERIMENT_PATH', f'{_rem_host}:~/{_rem_workspace}/{output_dir}')]
 
     envs_bash = '\n'.join(
         f'export {k}={v}' for k,v in envs
@@ -148,14 +149,12 @@ ulimit -n 60000
 
 {environment}
 git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
-mv {ginfile} xl/pytorch
+mv {ginfile} xl/
 cd xl
 
 ln -s /home/pnawrot/piotrek/datasets/ data
-bash getdata.sh
 
-cd pytorch
-bash train.sh {ginfile} {gpu_count} --config gpu_{gpu_count}
+bash run_exp.sh {ginfile} {gpu_count} --config gpu_{gpu_count}
     '''.format(
         branch=branch,
         exec_line=exec_line,
