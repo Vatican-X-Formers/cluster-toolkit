@@ -152,6 +152,7 @@ git clone https://github.com/Vatican-X-Formers/xl.git --branch {branch}
 mv {ginfile} xl/
 cd xl
 
+rm -rf data
 ln -s /home/pnawrot/piotrek/datasets/ data
 
 bash run_exp.sh {ginfile} {gpu_count} --config gpu_{gpu_count}
