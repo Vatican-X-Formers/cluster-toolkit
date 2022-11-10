@@ -34,7 +34,7 @@ def exec_on_rem_workspace(rem_host, rem_workspace, cmds):
 
 
 def prepare_workspace(rem_host: str, rem_workspace: str,
-                      username: str, filename: str, filepath: str,
+                      filename: str, filepath: str,
                       job: str, gpu: int, max_time: str,
                       job_file: str, output_dir: str, gtype: Union[None, str],
                       node: Union[None, str],
@@ -54,28 +54,32 @@ def prepare_workspace(rem_host: str, rem_workspace: str,
 
     # prepare job
     job_str = R'''#!/bin/bash
-rm -rf ~/.nv/
+#SBATCH --gres=gpu:{gpu}
+#SBATCH --time={max_time}
+#SBATCH -A NLP-CDT-SL2-GPU
+#SBATCH -p ampere
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+
+. /etc/profile.d/modules.sh
+module purge
+module load rhel8/default-amp
+
+source ~/.bashrc
 nvidia-smi -L
 nvidia-smi
 
 {job}
-
-echo "Welcome to Vice City. Welcome to the 1980s."
 '''.format(
         job=job,
+        gpu=gpu,
+        max_time=max_time
     )
 
     with open(job_file, 'w') as output:
         output.write(job_str)
 
     send_to_server(job_file, rem_host, os.path.join(rem_workspace, output_dir))
-
-    if rem_host == 'cymes':
-        with open('start.sh', 'w') as start_file:
-            start_file.write('docker run --gpus all --rm --ipc=host -v ${PWD}:/workspace/hourglass -v /pio/scratch/1/pn/data:/pio/scratch/1/pn/data transformer-xl bash jobtask.txt')
-
-        send_to_server('start.sh', rem_host, os.path.join(rem_workspace, output_dir))
-
     print('[INFO] Workspace prepared')
 
 
@@ -98,66 +102,40 @@ def create_job(branch: str,
         f'export {k}={v}' for k, v in envs
     )
 
-    if _rem_host == 'cymes':
-        job = '''
-{environment}
-git clone https://github.com/PiotrNawrot/hourglass --branch {branch} xl
-chmod -R 777 xl
-mv {ginfile} xl/
-cd xl
-
-rm -rf data
-ln -s /pio/scratch/1/pn/data data
-
-C={ginfile} bash scripts/run_exp.sh {gpu_count}
-        '''.format(
-            branch=branch,
-            environment=envs_bash,
-            gpu_count=gpu_count,
-            ginfile=ginfile,
-        )
-    else:
-        job = '''
-ulimit -n 60000
-. /home/pnawrot/venv/bin/activate
+    job = '''
+conda activate cos
 
 {environment}
+
 git clone https://github.com/PiotrNawrot/hourglass --branch {branch} xl
 mv {ginfile} xl/
 cd xl
-
-rm -rf data
-ln -s /home/pnawrot/piotrek/datasets/ data
+ln -s ~/data/ data
 
 C={ginfile} bash scripts/run_exp.sh {gpu_count}
-        '''.format(
-            branch=branch,
-            environment=envs_bash,
-            gpu_count=gpu_count,
-            ginfile=ginfile,
-        )
+    '''.format(
+        branch=branch,
+        environment=envs_bash,
+        gpu_count=gpu_count,
+        ginfile=ginfile,
+    )
 
     print('[INFO] Job generated')
 
     return job
 
 
-def run_job(rem_host: str, rem_workspace: str, job_file: str, jobid: int,
-            out_file: str):
-    if rem_host != 'cymes' and jobid != 2137:
-        cmds = [f'nohup srun --jobid={jobid} --output={out_file} bash {job_file} >/dev/null 2>/dev/null </dev/null &']
-        exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace,
-                              cmds=cmds)
+def run_job(rem_host: str, rem_workspace: str, job_file: str, out_file: str):
+    cmds = [f'sbatch {job_file}']
+    exec_on_rem_workspace(rem_host=rem_host, rem_workspace=rem_workspace, cmds=cmds)
     print('Job submitted')
 
 
 def deploy_job(filepath: str, filename:str,
-               username: str,
                branch: str, gpu:int, max_time: str,
                gtype: Union[str, None],
                node: Union[str, None],
-               mem: Union[str, None],
-               jobid: Union[int, None]) -> None:
+               mem: Union[str, None],) -> None:
 
     _date = time.strftime("%Y%m%d_%H%M%S")
     _out_file = _date+'_'+'.out'
@@ -167,14 +145,16 @@ def deploy_job(filepath: str, filename:str,
 
     job = create_job(branch=branch, output_dir=_out_dir,
                      gpu_count=gpu, ginfile=filename)
+
     prepare_workspace(rem_host=_rem_host, rem_workspace=_rem_workspace,
-                      username=username, filepath=filepath,
+                      filepath=filepath,
                       filename=filename, job=job, gpu=gpu, max_time=max_time,
                       job_file= _job_file,
                       output_dir=_out_dir, gtype=gtype, node=node,
                       mem=mem)
+
     run_job(rem_host=_rem_host, rem_workspace=os.path.join(_rem_workspace, _out_dir),
-            job_file=_job_file, jobid=jobid, out_file=_out_file)
+            job_file=_job_file, out_file=_out_file)
 
     print(f'Output will be saved in\n{_rem_host}:{_rem_workspace}/{_out_dir}')
     os.remove(_job_file)
@@ -190,13 +170,11 @@ if __name__ == "__main__":
     parser.add_argument(
         '--gin', help='gin file path', required=False, type=str)
     parser.add_argument(
-        '--user', help='username on the cluster', required=True, type=str)
-    parser.add_argument(
         '--branch', help='branch name', required=True, type=str)
     parser.add_argument(
         '--gpu-count', help='number of gpu', default=1, type=int)
     parser.add_argument(
-        '--time', help='maximum job time, see recent mail', default="3-0",
+        '--time', help='maximum job time, see recent mail', default="1-0",
         type=str)
     parser.add_argument(
         '--gpu-type', help='type of gpu', type=str, choices=['1080ti', 'titanx', 'titanv', 'rtx2080ti'])
@@ -205,30 +183,20 @@ if __name__ == "__main__":
         [f'asusgpu{i}' for i in range(1,7)]+['arnold', 'steven', 'sylvester', 'bruce'])
     parser.add_argument(
         '--mem', help='cpu memory', required=False, default=None, type=str)
-    parser.add_argument(
-        '--script', help='custom script', type=str, required=False)
-    parser.add_argument(
-        '--jobid', type=str, required=False,)
 
     args = parser.parse_args()
-    print(args.script, args.gin, bool(args.script), bool(args.gin))
-    if not (bool(args.gin) ^ bool(args.script)):
-        parser.error("One of --gin and --script required")
+    print(args.gin, bool(args.gin))
 
-    if args.user == 'cymes':
-        _rem_host = 'cymes'
-        _rem_workspace = '/pio/scratch/1/pn/experiments'
-    else:
-        _rem_host = f'{args.user}@entropy.mimuw.edu.pl'
-        _rem_workspace = '~/vatican_trax_workspace'
+    _rem_host = f'csd3'
+    _rem_workspace = '~/experiments'
 
     gins = [os.path.join(args.gin, f) for f in os.listdir(args.gin)] if os.path.isdir(args.gin) else [args.gin]
 
     for gin in gins:
         filename, filepath = target_info(gin)
         time.sleep(2)
-        deploy_job(username=args.user, branch=args.branch,
+        deploy_job(branch=args.branch,
                    gpu=args.gpu_count, max_time=args.time,
                    filename=filename, filepath=filepath,
                    gtype=args.gpu_type,
-                   node=args.node, mem=args.mem, jobid=args.jobid)
+                   node=args.node, mem=args.mem)
